@@ -767,7 +767,14 @@
 
                 // Check for function calls
                 if (input.startsWith('>')) {
-                    const funcCall = input.substring(1).trim();
+                    let funcCall = input.substring(1).trim();
+                    
+                    // If there's a pipe separator, only parse the function part (before the pipe)
+                    const pipeIndex = funcCall.indexOf('|');
+                    if (pipeIndex !== -1) {
+                        funcCall = funcCall.substring(0, pipeIndex).trim();
+                    }
+                    
                     const parts = funcCall.split(' ');
                     const funcName = parts[0];
                     const args = parts.slice(1);
