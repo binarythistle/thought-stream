@@ -777,7 +777,8 @@
                         
                         if (result.success) {
                             type = 'function';
-                            content = `${funcName}(${args.join(' ')}) = ${result.result}`;
+                            // For function notes, content should only contain the result
+                            content = result.result;
                         } else {
                             type = 'error';
                             content = `${funcName}: ${result.error}`;
@@ -801,10 +802,18 @@
                 let description = '';
                 let workingContent = content;
                 
-                const pipeIndex = content.indexOf('|');
+                // For function notes, we need to handle the original input for description extraction
+                let inputForDescription = (type === 'function') ? input : content;
+                
+                const pipeIndex = inputForDescription.indexOf('|');
                 if (pipeIndex !== -1) {
-                    workingContent = content.substring(0, pipeIndex).trim();
-                    const afterPipe = content.substring(pipeIndex + 1).trim();
+                    if (type === 'function') {
+                        // For function notes, don't modify workingContent since it's already just the result
+                        workingContent = content;
+                    } else {
+                        workingContent = inputForDescription.substring(0, pipeIndex).trim();
+                    }
+                    const afterPipe = inputForDescription.substring(pipeIndex + 1).trim();
                     
                     // Extract hashtags from the part after pipe
                     const tagRegex = /#(\w+)/g;
@@ -827,13 +836,25 @@
                     const tags = [];
                     let match;
                     
-                    while ((match = tagRegex.exec(content)) !== null) {
+                    // For function notes, extract tags from original input, not just content
+                    let contentForTags = (type === 'function') ? input : content;
+                    
+                    while ((match = tagRegex.exec(contentForTags)) !== null) {
                         tags.push(match[1].toLowerCase());
                     }
                     
                     // Remove hashtags from content for display
                     var extractedTags = [...new Set(tags)];
                     var cleanContent = content.replace(/#\w+/g, '').trim();
+                    
+                    // For function notes without a title, set description to the function call expression
+                    if (type === 'function') {
+                        const funcCall = input.substring(1).trim();
+                        const parts = funcCall.split(' ');
+                        const funcName = parts[0];
+                        const args = parts.slice(1);
+                        description = `${funcName}(${args.join(' ')})`;
+                    }
                 }
 
                 // Apply formatting if it's a code entry with a supported language tag
