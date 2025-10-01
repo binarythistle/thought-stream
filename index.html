@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro Note Taker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2d2d30;
+            padding: 12px 20px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #cccccc;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-input {
+            background: #3c3c3c;
+            border: 1px solid #464647;
+            color: #cccccc;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            width: 200px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+
+        .tag-filter {
+            background: #3c3c3c;
+            border: 1px solid #464647;
+            color: #cccccc;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            width: 150px;
+        }
+
+        .tag-filter:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .stream-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #1e1e1e;
+        }
+
+        .stream-entry {
+            margin-bottom: 16px;
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .stream-entry:hover {
+            background: #2d2d30;
+        }
+
+        .stream-entry.selected {
+            border-color: #007acc;
+            background: #094771;
+        }
+
+        .entry-header {
+            padding: 8px 12px;
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .entry-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .entry-tags {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: #0066cc;
+            color: #e6f3ff;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .tag:hover {
+            background: #0080ff;
+        }
+
+        .entry-type {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .entry-description {
+            color: #cccccc;
+            font-size: 13px;
+            font-weight: 600;
+            margin-left: 8px;
+            margin-right: 8px;
+        }
+
+        .entry-type.text { background: #4a5568; color: #e2e8f0; }
+        .entry-type.code { background: #065f46; color: #a7f3d0; }
+        .entry-type.url { background: #7c2d12; color: #fed7aa; }
+        .entry-type.cmd { background: #581c87; color: #ddd6fe; }
+        .entry-type.function { background: #0f766e; color: #a7f3d0; }
+        .entry-type.error { background: #dc2626; color: #fecaca; }
+
+        .entry-content {
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .entry-content.code {
+            background: #0d1117;
+            border-left: 3px solid #065f46;
+            padding-left: 15px;
+        }
+
+        /* Prism.js syntax highlighting styles */
+        .token.comment,
+        .token.prolog,
+        .token.doctype,
+        .token.cdata {
+            color: #6a737d;
+        }
+
+        .token.punctuation {
+            color: #d1d5da;
+        }
+
+        .token.property,
+        .token.tag,
+        .token.boolean,
+        .token.number,
+        .token.constant,
+        .token.symbol,
+        .token.deleted {
+            color: #79b8ff;
+        }
+
+        .token.selector,
+        .token.attr-name,
+        .token.string,
+        .token.char,
+        .token.builtin,
+        .token.inserted {
+            color: #9ecbff;
+        }
+
+        .token.operator,
+        .token.entity,
+        .token.url,
+        .language-css .token.string,
+        .style .token.string {
+            color: #d1d5da;
+        }
+
+        .token.atrule,
+        .token.attr-value,
+        .token.keyword {
+            color: #f97583;
+        }
+
+        .token.function,
+        .token.class-name {
+            color: #b392f0;
+        }
+
+        .token.regex,
+        .token.important,
+        .token.variable {
+            color: #ffab70;
+        }
+
+        .entry-content.url {
+            color: #4fc3f7;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .entry-content.function {
+            background: #0f2027;
+            border-left: 3px solid #0f766e;
+            padding-left: 15px;
+        }
+
+        .entry-content.error {
+            background: #2d1b1b;
+            border-left: 3px solid #dc2626;
+            padding-left: 15px;
+            color: #fca5a5;
+        }
+
+        .entry-actions {
+            padding: 8px 12px;
+            background: #2d2d30;
+            border-top: 1px solid #3e3e42;
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .stream-entry:hover .entry-actions,
+        .stream-entry.selected .entry-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            background: #0e639c;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #1177bb;
+        }
+
+        .input-container {
+            background: #2d2d30;
+            border-top: 1px solid #3e3e42;
+            padding: 16px 20px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            background: #3c3c3c;
+            border: 1px solid #464647;
+            border-radius: 6px;
+            padding: 12px;
+            position: relative;
+        }
+
+        .input-wrapper.focused {
+            border-color: #007acc;
+        }
+
+        .input-wrapper.warning {
+            border-color: #f59e0b;
+        }
+
+        .input-wrapper.danger {
+            border-color: #dc2626;
+        }
+
+        .prompt-symbol {
+            color: #007acc;
+            font-weight: bold;
+            margin-right: 8px;
+            font-family: 'Consolas', monospace;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #d4d4d4;
+            font-size: 14px;
+            font-family: 'Consolas', monospace;
+            outline: none;
+        }
+
+        .chat-input::placeholder {
+            color: #858585;
+        }
+
+        .char-counter {
+            font-size: 11px;
+            color: #cccccc;
+            font-family: 'Consolas', monospace;
+            margin-left: 8px;
+            white-space: nowrap;
+            background: #3c3c3c;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #464647;
+            font-weight: 600;
+        }
+
+        .char-counter.warning {
+            color: #f59e0b;
+        }
+
+        .char-counter.danger {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        .help-text {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #858585;
+        }
+
+        .empty-state {
+            text-align: center;
+            margin-top: 60px;
+            color: #858585;
+        }
+
+        .empty-state h2 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #cccccc;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Micro Note Taker</h1>
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Search notes..." id="searchInput">
+            <select class="tag-filter" id="tagFilter">
+                <option value="">All tags</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="stream-container" id="streamContainer">
+            <div class="empty-state" id="emptyState">
+                <h2>Welcome to Micro Note Taker</h2>
+                <p>Start typing below to add your first note</p>
+                <p style="margin-top: 16px; font-size: 11px;">
+                    Use prefixes: <code>$code:</code> <code>$url:</code> <code>$cmd:</code> <code>>functions</code> and <code>#tags</code><br>
+                    Add descriptions: <code>content | description #tags</code>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-container">
+        <div class="input-wrapper" id="inputWrapper">
+            <span class="prompt-symbol">></span>
+            <input type="text" class="chat-input" id="chatInput" placeholder="Type your note... (use $code:, $url:, $cmd:, >functions, | for descriptions, and #tags)" autofocus maxlength="1000">
+        </div>
+        <div class="help-text">
+            Press Enter to add • Use ↑↓ for history • Max 1000 chars • Use $code:, $url:, $cmd: or >functions • Use | for descriptions • Add #tags anywhere
+            <span class="char-counter" id="charCounter">1000</span>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-ruby.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-graphql.min.js"></script>
+    <script>
+        class MicroNoteTaker {
+            constructor() {
+                this.notes = JSON.parse(localStorage.getItem('microNotes')) || [];
+                this.selectedEntry = null;
+                this.filteredNotes = [...this.notes];
+                this.allTags = new Set();
+                this.functions = this.initializeFunctions();
+                this.formatters = this.initializeFormatters();
+                this.highlighters = this.initializeHighlighters();
+                this.commandHistory = JSON.parse(localStorage.getItem('microCommandHistory')) || [];
+                this.historyIndex = -1;
+                this.currentInput = '';
+                this.maxLength = 1000;
+                
+                this.initializeElements();
+                this.bindEvents();
+                this.extractAllTags();
+                this.renderTagFilter();
+                this.renderNotes();
+                this.updateCharCounter();
+            }
+
+            initializeHighlighters() {
+                // Map our tag names to Prism language identifiers
+                return {
+                    'json': 'json',
+                    'javascript': 'javascript',
+                    'js': 'javascript',
+                    'python': 'python',
+                    'py': 'python',
+                    'csharp': 'csharp',
+                    'cs': 'csharp',
+                    'java': 'java',
+                    'ruby': 'ruby',
+                    'rb': 'ruby',
+                    'graphql': 'graphql',
+                    'gql': 'graphql'
+                };
+            }
+
+            initializeFormatters() {
+                return {
+                    json: {
+                        format: (code) => {
+                            try {
+                                const parsed = JSON.parse(code);
+                                return JSON.stringify(parsed, null, 2);
+                            } catch (error) {
+                                throw new Error(`Invalid JSON: ${error.message}`);
+                            }
+                        },
+                        validate: (code) => {
+                            try {
+                                JSON.parse(code);
+                                return true;
+                            } catch {
+                                return false;
+                            }
+                        }
+                    },
+                    javascript: {
+                        format: (code) => {
+                            // Basic formatting - add line breaks after common patterns
+                            return code
+                                .replace(/;\s*/g, ';\n')
+                                .replace(/{\s*/g, '{\n  ')
+                                .replace(/}\s*/g, '\n}\n')
+                                .replace(/,\s*/g, ',\n  ')
+                                .replace(/\n\s*\n/g, '\n') // Remove double newlines
+                                .trim();
+                        }
+                    },
+                    python: {
+                        format: (code) => {
+                            // Basic formatting - ensure proper line breaks
+                            return code
+                                .replace(/:\s*/g, ':\n    ')
+                                .replace(/\n\s*\n/g, '\n')
+                                .trim();
+                        }
+                    },
+                    java: {
+                        format: (code) => {
+                            // Basic formatting for Java
+                            return code
+                                .replace(/;\s*/g, ';\n')
+                                .replace(/{\s*/g, '{\n    ')
+                                .replace(/}\s*/g, '\n}\n')
+                                .replace(/\n\s*\n/g, '\n')
+                                .trim();
+                        }
+                    },
+                    csharp: {
+                        format: (code) => {
+                            // Similar to Java formatting
+                            return code
+                                .replace(/;\s*/g, ';\n')
+                                .replace(/{\s*/g, '{\n    ')
+                                .replace(/}\s*/g, '\n}\n')
+                                .replace(/\n\s*\n/g, '\n')
+                                .trim();
+                        }
+                    },
+                    ruby: {
+                        format: (code) => {
+                            // Basic Ruby formatting
+                            return code
+                                .replace(/\bdo\b\s*/g, 'do\n  ')
+                                .replace(/\bend\b/g, '\nend')
+                                .replace(/\n\s*\n/g, '\n')
+                                .trim();
+                        }
+                    }
+                };
+            }
+
+            initializeFunctions() {
+                return {
+                    'tB64': {
+                        description: 'Convert text to Base64',
+                        execute: (args) => {
+                            try {
+                                if (args.length === 0) {
+                                    return { success: false, error: 'No text provided to encode' };
+                                }
+                                const text = args.join(' ');
+                                const result = btoa(text);
+                                return { success: true, result: result };
+                            } catch (error) {
+                                return { success: false, error: `Encoding failed: ${error.message}` };
+                            }
+                        }
+                    },
+                    'fB64': {
+                        description: 'Convert Base64 to text',
+                        execute: (args) => {
+                            try {
+                                if (args.length === 0) {
+                                    return { success: false, error: 'No Base64 string provided to decode' };
+                                }
+                                const base64 = args.join(' ');
+                                const result = atob(base64);
+                                return { success: true, result: result };
+                            } catch (error) {
+                                return { success: false, error: `Invalid Base64 or decoding failed: ${error.message}` };
+                            }
+                        }
+                    },
+                    'guid': {
+                        description: 'Generate a new GUID/UUID',
+                        execute: (args) => {
+                            try {
+                                // Generate a UUID v4 (random)
+                                const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                                    const r = Math.random() * 16 | 0;
+                                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                                    return v.toString(16);
+                                });
+                                return { success: true, result: uuid };
+                            } catch (error) {
+                                return { success: false, error: `GUID generation failed: ${error.message}` };
+                            }
+                        }
+                    }
+                };
+            }
+
+            initializeElements() {
+                this.chatInput = document.getElementById('chatInput');
+                this.inputWrapper = document.getElementById('inputWrapper');
+                this.streamContainer = document.getElementById('streamContainer');
+                this.searchInput = document.getElementById('searchInput');
+                this.tagFilter = document.getElementById('tagFilter');
+                this.emptyState = document.getElementById('emptyState');
+                this.charCounter = document.getElementById('charCounter');
+            }
+
+            bindEvents() {
+                this.chatInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.addNote();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        this.navigateHistory('up');
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        this.navigateHistory('down');
+                    } else {
+                        // Reset history navigation when user starts typing (for non-arrow keys)
+                        if (this.historyIndex !== -1 && e.key !== 'ArrowUp' && e.key !== 'ArrowDown' && 
+                            !e.ctrlKey && !e.altKey && !e.metaKey && e.key.length === 1) {
+                            this.historyIndex = -1;
+                        }
+                    }
+                });
+
+                this.chatInput.addEventListener('focus', () => {
+                    this.inputWrapper.classList.add('focused');
+                    this.updateInputStyle();
+                });
+
+                this.chatInput.addEventListener('blur', () => {
+                    this.inputWrapper.classList.remove('focused');
+                    this.updateInputStyle();
+                });
+
+                this.chatInput.addEventListener('input', () => {
+                    this.updateCharCounter();
+                    // Reset history navigation when user starts typing
+                    if (this.historyIndex !== -1) {
+                        this.historyIndex = -1;
+                    }
+                });
+
+                this.searchInput.addEventListener('input', (e) => {
+                    this.filterNotes();
+                });
+
+                this.tagFilter.addEventListener('change', (e) => {
+                    this.filterNotes();
+                });
+
+                // Global keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 'f') {
+                        e.preventDefault();
+                        this.searchInput.focus();
+                    }
+                });
+            }
+
+            addNote() {
+                const input = this.chatInput.value.trim();
+                if (!input) return;
+
+                // Add to command history
+                this.addToHistory(input);
+
+                const note = this.parseInput(input);
+                note.id = Date.now().toString();
+                note.timestamp = new Date();
+
+                this.notes.unshift(note);
+                this.saveNotes();
+                this.chatInput.value = '';
+                this.historyIndex = -1; // Reset history navigation
+                this.extractAllTags();
+                this.renderTagFilter();
+                this.filterNotes();
+            }
+
+            addToHistory(command) {
+                // Don't add if it's the same as the last command
+                if (this.commandHistory.length > 0 && this.commandHistory[0] === command) {
+                    return;
+                }
+
+                // Add to beginning of history
+                this.commandHistory.unshift(command);
+
+                // Keep only last 20 commands
+                if (this.commandHistory.length > 20) {
+                    this.commandHistory = this.commandHistory.slice(0, 20);
+                }
+
+                // Save to localStorage
+                localStorage.setItem('microCommandHistory', JSON.stringify(this.commandHistory));
+            }
+
+            navigateHistory(direction) {
+                if (this.commandHistory.length === 0) return;
+
+                // Store current input when starting navigation
+                if (this.historyIndex === -1) {
+                    this.currentInput = this.chatInput.value;
+                }
+
+                if (direction === 'up') {
+                    if (this.historyIndex < this.commandHistory.length - 1) {
+                        this.historyIndex++;
+                        this.chatInput.value = this.commandHistory[this.historyIndex];
+                    }
+                } else if (direction === 'down') {
+                    if (this.historyIndex > 0) {
+                        this.historyIndex--;
+                        this.chatInput.value = this.commandHistory[this.historyIndex];
+                    } else if (this.historyIndex === 0) {
+                        this.historyIndex = -1;
+                        this.chatInput.value = this.currentInput; // Restore original input
+                    }
+                }
+
+                // Move cursor to end of input
+                this.chatInput.setSelectionRange(this.chatInput.value.length, this.chatInput.value.length);
+                this.updateCharCounter();
+            }
+
+            updateCharCounter() {
+                const currentLength = this.chatInput.value.length;
+                const remaining = this.maxLength - currentLength;
+                
+                this.charCounter.textContent = remaining.toString();
+                
+                // Remove all style classes first
+                this.charCounter.classList.remove('warning', 'danger');
+                
+                // Add appropriate style based on remaining characters
+                if (remaining <= 20) {
+                    this.charCounter.classList.add('danger');
+                } else if (remaining <= 50) {
+                    this.charCounter.classList.add('warning');
+                }
+                
+                this.updateInputStyle();
+            }
+
+            updateInputStyle() {
+                const currentLength = this.chatInput.value.length;
+                const remaining = this.maxLength - currentLength;
+                
+                // Remove all border style classes first
+                this.inputWrapper.classList.remove('warning', 'danger');
+                
+                // Add appropriate border style (but preserve focused state)
+                if (remaining <= 20) {
+                    this.inputWrapper.classList.add('danger');
+                } else if (remaining <= 50) {
+                    this.inputWrapper.classList.add('warning');
+                }
+            }
+
+            parseInput(input) {
+                const prefixes = {
+                    '$code:': 'code',
+                    '$url:': 'url',
+                    '$cmd:': 'cmd'
+                };
+
+                let type = 'text';
+                let content = input;
+
+                // Check for function calls
+                if (input.startsWith('>')) {
+                    const funcCall = input.substring(1).trim();
+                    const parts = funcCall.split(' ');
+                    const funcName = parts[0];
+                    const args = parts.slice(1);
+
+                    if (this.functions[funcName]) {
+                        const result = this.functions[funcName].execute(args);
+                        
+                        if (result.success) {
+                            type = 'function';
+                            content = `${funcName}(${args.join(' ')}) = ${result.result}`;
+                        } else {
+                            type = 'error';
+                            content = `${funcName}: ${result.error}`;
+                        }
+                    } else {
+                        type = 'error';
+                        content = `Unknown function: ${funcName}. Available: ${Object.keys(this.functions).join(', ')}`;
+                    }
+                } else {
+                    // Check for prefixes
+                    for (const [prefix, noteType] of Object.entries(prefixes)) {
+                        if (input.startsWith(prefix)) {
+                            type = noteType;
+                            content = input.substring(prefix.length).trim();
+                            break;
+                        }
+                    }
+                }
+
+                // Extract description using pipe separator
+                let description = '';
+                let workingContent = content;
+                
+                const pipeIndex = content.indexOf('|');
+                if (pipeIndex !== -1) {
+                    workingContent = content.substring(0, pipeIndex).trim();
+                    const afterPipe = content.substring(pipeIndex + 1).trim();
+                    
+                    // Extract hashtags from the part after pipe
+                    const tagRegex = /#(\w+)/g;
+                    const tags = [];
+                    let match;
+                    
+                    while ((match = tagRegex.exec(afterPipe)) !== null) {
+                        tags.push(match[1].toLowerCase());
+                    }
+                    
+                    // Description is everything after pipe minus the tags
+                    description = afterPipe.replace(/#\w+/g, '').trim();
+                    
+                    // Store tags and clean content
+                    var extractedTags = [...new Set(tags)];
+                    var cleanContent = workingContent;
+                } else {
+                    // No pipe found, extract hashtags from content as before
+                    const tagRegex = /#(\w+)/g;
+                    const tags = [];
+                    let match;
+                    
+                    while ((match = tagRegex.exec(content)) !== null) {
+                        tags.push(match[1].toLowerCase());
+                    }
+                    
+                    // Remove hashtags from content for display
+                    var extractedTags = [...new Set(tags)];
+                    var cleanContent = content.replace(/#\w+/g, '').trim();
+                }
+
+                // Apply formatting if it's a code entry with a supported language tag
+                if (type === 'code') {
+                    cleanContent = this.applyCodeFormatting(cleanContent, extractedTags);
+                }
+
+                return {
+                    type,
+                    content: cleanContent,
+                    description: description,
+                    originalContent: input, // Keep original for editing
+                    tags: extractedTags, // Remove duplicates
+                    needsHighlighting: type === 'code' && this.hasHighlightableLanguage(extractedTags)
+                };
+            }
+
+            hasHighlightableLanguage(tags) {
+                return tags.some(tag => this.highlighters[tag]);
+            }
+
+            applyCodeFormatting(code, tags) {
+                // Check if any tag matches a supported formatter
+                for (const tag of tags) {
+                    const formatterKey = this.getFormatterKey(tag);
+                    if (formatterKey && this.formatters[formatterKey]) {
+                        try {
+                            return this.formatters[formatterKey].format(code);
+                        } catch (error) {
+                            // If formatting fails, return original code with error indication
+                            console.warn(`Failed to format ${formatterKey}:`, error.message);
+                            return `${code}\n\n// Format error: ${error.message}`;
+                        }
+                    }
+                }
+                return code; // Return original if no formatter found
+            }
+
+            getFormatterKey(tag) {
+                // Map tag aliases to formatter keys
+                const mapping = {
+                    'javascript': 'javascript',
+                    'js': 'javascript',
+                    'python': 'python',
+                    'py': 'python',
+                    'java': 'java',
+                    'csharp': 'csharp',
+                    'cs': 'csharp',
+                    'ruby': 'ruby',
+                    'rb': 'ruby',
+                    'json': 'json'
+                };
+                return mapping[tag.toLowerCase()];
+            }
+
+            applySyntaxHighlighting(element, code, tags) {
+                // Find the first matching language
+                const language = tags.find(tag => this.highlighters[tag]);
+                if (!language) return;
+
+                const prismLanguage = this.highlighters[language];
+                
+                // Check if Prism and the language are available
+                if (typeof Prism !== 'undefined' && Prism.languages[prismLanguage]) {
+                    const highlighted = Prism.highlight(code, Prism.languages[prismLanguage], prismLanguage);
+                    element.innerHTML = highlighted;
+                    element.classList.add(`language-${prismLanguage}`);
+                }
+            }
+
+            filterNotes() {
+                const searchTerm = this.searchInput.value.toLowerCase();
+                const selectedTag = this.tagFilter.value;
+
+                this.filteredNotes = this.notes.filter(note => {
+                    // Ensure tags array exists
+                    const noteTags = note.tags || [];
+                    
+                    // Text search
+                    const matchesSearch = !searchTerm || 
+                        note.content.toLowerCase().includes(searchTerm) ||
+                        note.type.toLowerCase().includes(searchTerm) ||
+                        (note.description && note.description.toLowerCase().includes(searchTerm)) ||
+                        noteTags.some(tag => tag.includes(searchTerm));
+
+                    // Tag filter
+                    const matchesTag = !selectedTag || noteTags.includes(selectedTag);
+
+                    return matchesSearch && matchesTag;
+                });
+
+                this.renderNotes();
+            }
+
+            extractAllTags() {
+                this.allTags.clear();
+                this.notes.forEach(note => {
+                    const noteTags = note.tags || [];
+                    noteTags.forEach(tag => this.allTags.add(tag));
+                });
+            }
+
+            renderTagFilter() {
+                const currentValue = this.tagFilter.value;
+                this.tagFilter.innerHTML = '<option value="">All tags</option>';
+                
+                [...this.allTags].sort().forEach(tag => {
+                    const option = document.createElement('option');
+                    option.value = tag;
+                    option.textContent = `#${tag}`;
+                    this.tagFilter.appendChild(option);
+                });
+
+                // Restore selection if it still exists
+                if (currentValue && this.allTags.has(currentValue)) {
+                    this.tagFilter.value = currentValue;
+                }
+            }
+
+            renderNotes() {
+                if (this.filteredNotes.length === 0) {
+                    this.emptyState.classList.remove('hidden');
+                    this.streamContainer.innerHTML = '';
+                    this.streamContainer.appendChild(this.emptyState);
+                    return;
+                }
+
+                this.emptyState.classList.add('hidden');
+                this.streamContainer.innerHTML = '';
+
+                this.filteredNotes.forEach(note => {
+                    const entryElement = this.createNoteElement(note);
+                    this.streamContainer.appendChild(entryElement);
+                });
+            }
+
+            createNoteElement(note) {
+                const entry = document.createElement('div');
+                entry.className = 'stream-entry';
+                entry.dataset.noteId = note.id;
+
+                const timeStr = new Date(note.timestamp).toLocaleString();
+                
+                // Create tags HTML
+                const noteTags = note.tags || [];
+                const tagsHtml = noteTags.length > 0 
+                    ? `<div class="entry-tags">${noteTags.map(tag => `<span class="tag" data-tag="${tag}">#${tag}</span>`).join('')}</div>`
+                    : '';
+                
+                // Create description HTML
+                const descriptionHtml = note.description ? `<span class="entry-description">${note.description}</span>` : '';
+                
+                entry.innerHTML = `
+                    <div class="entry-header">
+                        <div class="entry-meta">
+                            <span class="entry-type ${note.type}">${note.type}</span>
+                            ${descriptionHtml}
+                            ${tagsHtml}
+                        </div>
+                        <span class="timestamp">${timeStr}</span>
+                    </div>
+                    <div class="entry-content ${note.type}" ${note.type === 'url' ? 'title="Click to open URL"' : ''}>${note.content}</div>
+                    <div class="entry-actions">
+                        <button class="action-btn copy-btn">Copy</button>
+                        ${note.type === 'url' ? '<button class="action-btn open-btn">Open</button>' : ''}
+                        <button class="action-btn delete-btn">Delete</button>
+                    </div>
+                `;
+
+                // Apply syntax highlighting if needed
+                if (note.needsHighlighting) {
+                    const contentElement = entry.querySelector('.entry-content');
+                    this.applySyntaxHighlighting(contentElement, note.content, note.tags || []);
+                }
+
+                // Bind events
+                entry.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('action-btn')) return;
+                    if (e.target.classList.contains('tag')) return;
+                    this.selectEntry(entry);
+                });
+
+                // Tag click events
+                entry.querySelectorAll('.tag').forEach(tagEl => {
+                    tagEl.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.filterByTag(e.target.dataset.tag);
+                    });
+                });
+
+                // URL click to open
+                const content = entry.querySelector('.entry-content');
+                if (note.type === 'url') {
+                    content.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.openUrl(note.content);
+                    });
+                }
+
+                // Action buttons
+                const copyBtn = entry.querySelector('.copy-btn');
+                const openBtn = entry.querySelector('.open-btn');
+                const deleteBtn = entry.querySelector('.delete-btn');
+
+                copyBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.copyToClipboard(note.content);
+                });
+
+                if (openBtn) {
+                    openBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.openUrl(note.content);
+                    });
+                }
+
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.deleteNote(note.id);
+                });
+
+                return entry;
+            }
+
+            selectEntry(entryElement) {
+                // Remove previous selection
+                document.querySelectorAll('.stream-entry.selected').forEach(el => {
+                    el.classList.remove('selected');
+                });
+
+                // Select current entry
+                entryElement.classList.add('selected');
+                this.selectedEntry = entryElement.dataset.noteId;
+            }
+
+            filterByTag(tag) {
+                this.tagFilter.value = tag;
+                this.filterNotes();
+            }
+
+            copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    // Could add a toast notification here
+                    console.log('Copied to clipboard');
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            }
+
+            openUrl(url) {
+                // In Electron, you'd use shell.openExternal(url)
+                // For web demo, we'll just open in new tab
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                }
+                window.open(url, '_blank');
+            }
+
+            deleteNote(noteId) {
+                this.notes = this.notes.filter(note => note.id !== noteId);
+                this.saveNotes();
+                this.extractAllTags();
+                this.renderTagFilter();
+                this.filterNotes();
+            }
+
+            saveNotes() {
+                localStorage.setItem('microNotes', JSON.stringify(this.notes));
+            }
+        }
+
+        // Initialize the app
+        const app = new MicroNoteTaker();
+    </script>
+</body>
+</html>
