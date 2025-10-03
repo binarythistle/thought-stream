@@ -555,6 +555,7 @@
             }
 
             initializeFunctions() {
+                const self = this;
                 return {
                     'tB64': {
                         description: 'Convert text to Base64',
@@ -599,6 +600,40 @@
                                 return { success: true, result: uuid };
                             } catch (error) {
                                 return { success: false, error: `GUID generation failed: ${error.message}` };
+                            }
+                        }
+                    },
+                    's': {
+                        description: 'Search notes',
+                        execute: (args) => {
+                            try {
+                                if (args.length === 0) {
+                                    // Clear search if no arguments
+                                    self.searchInput.value = '';
+                                    self.filterNotes();
+                                    self.renderNotes();
+                                    return { success: true, result: 'Search cleared - showing all notes' };
+                                }
+                                
+                                const searchTerm = args.join(' ');
+                                
+                                // Set the search input value
+                                self.searchInput.value = searchTerm;
+                                
+                                // Trigger the search filtering
+                                self.filterNotes();
+                                self.renderNotes();
+                                
+                                // Count results
+                                const resultCount = self.filteredNotes.length;
+                                const totalCount = self.notes.length;
+                                
+                                return { 
+                                    success: true, 
+                                    result: `Found ${resultCount} of ${totalCount} notes matching "${searchTerm}"` 
+                                };
+                            } catch (error) {
+                                return { success: false, error: `Search failed: ${error.message}` };
                             }
                         }
                     }
