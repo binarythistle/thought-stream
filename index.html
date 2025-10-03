@@ -285,6 +285,21 @@
             background: #1177bb;
         }
 
+        .action-btn.confirm-delete {
+            background: #dc3545;
+            animation: pulse-red 0.3s ease-in-out;
+        }
+
+        .action-btn.confirm-delete:hover {
+            background: #c82333;
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
         .input-container {
             background: #2d2d30;
             border-top: 1px solid #3e3e42;
@@ -1080,7 +1095,7 @@
 
                 deleteBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.deleteNote(note.id);
+                    this.handleDeleteClick(deleteBtn, note.id);
                 });
 
                 return entry;
@@ -1118,6 +1133,38 @@
                     url = 'https://' + url;
                 }
                 window.open(url, '_blank');
+            }
+
+            handleDeleteClick(deleteBtn, noteId) {
+                // Check if button is already in confirm state
+                if (deleteBtn.classList.contains('confirm-delete')) {
+                    // Second click - actually delete
+                    this.deleteNote(noteId);
+                    return;
+                }
+
+                // First click - enter confirm state
+                deleteBtn.textContent = 'Really delete?';
+                deleteBtn.classList.add('confirm-delete');
+
+                // Set timeout to revert button state
+                const timeoutId = setTimeout(() => {
+                    this.revertDeleteButton(deleteBtn);
+                }, 3000); // 3 seconds
+
+                // Store timeout ID on the button element for cleanup
+                deleteBtn.dataset.timeoutId = timeoutId;
+            }
+
+            revertDeleteButton(deleteBtn) {
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.classList.remove('confirm-delete');
+                
+                // Clear any existing timeout
+                if (deleteBtn.dataset.timeoutId) {
+                    clearTimeout(deleteBtn.dataset.timeoutId);
+                    delete deleteBtn.dataset.timeoutId;
+                }
             }
 
             deleteNote(noteId) {
