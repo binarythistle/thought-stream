@@ -636,6 +636,36 @@
                                 return { success: false, error: `Search failed: ${error.message}` };
                             }
                         }
+                    },
+                    'help': {
+                        description: 'List all available commands',
+                        execute: (args) => {
+                            try {
+                                const helpText = `Available Commands:
+
+PREFIXES:
+• $cmd: A command line snippet
+• $code: A code snippet - use tags (#) to specify language
+• $url: Create a clickable URL entry
+
+FUNCTIONS:
+• > tB64 <text> - Convert text to Base64 encoding
+• > fB64 <base64> - Decode Base64 string to text
+• > guid - Generate a new GUID/UUID
+• > s <search> - Search notes (or > s to clear search)
+• > help - Show this help information
+
+FEATURES:
+• Use | to add descriptions: > guid | New identifier
+• Add #tags anywhere for organization
+• Press ↑/↓ for command history
+• Max 1000 characters per note`;
+
+                                return { success: true, result: helpText };
+                            } catch (error) {
+                                return { success: false, error: `Help display failed: ${error.message}` };
+                            }
+                        }
                     }
                 };
             }
