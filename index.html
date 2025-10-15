@@ -162,6 +162,7 @@
         .entry-type.code { background: #065f46; color: #a7f3d0; }
         .entry-type.url { background: #7c2d12; color: #fed7aa; }
         .entry-type.cmd { background: #581c87; color: #ddd6fe; }
+        .entry-type.prompt { background: #b45309; color: #fde68a; }
         .entry-type.function { background: #0f766e; color: #a7f3d0; }
         .entry-type.error { background: #dc2626; color: #fecaca; }
 
@@ -411,7 +412,7 @@
                 <h2>Welcome to Micro Note Taker</h2>
                 <p>Start typing below to add your first note</p>
                 <p style="margin-top: 16px; font-size: 11px;">
-                    Use prefixes: <code>$code:</code> <code>$url:</code> <code>$cmd:</code> <code>>functions</code> and <code>#tags</code><br>
+                    Use prefixes: <code>$code:</code> <code>$url:</code> <code>$cmd:</code> <code>$prompt:</code> <code>>functions</code> and <code>#tags</code><br>
                     Add descriptions: <code>content | description #tags</code>
                 </p>
             </div>
@@ -421,10 +422,10 @@
     <div class="input-container">
         <div class="input-wrapper" id="inputWrapper">
             <span class="prompt-symbol">></span>
-            <input type="text" class="chat-input" id="chatInput" placeholder="Type your note... (use $code:, $url:, $cmd:, >functions, | for descriptions, and #tags)" autofocus maxlength="1000">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Type your note... (use $code:, $url:, $cmd:, $prompt:, >functions, | for descriptions, and #tags)" autofocus maxlength="1000">
         </div>
         <div class="help-text">
-            Press Enter to add • Use ↑↓ for history • Max 1000 chars • Use $code:, $url:, $cmd: or >functions • Use | for descriptions • Add #tags anywhere
+            Press Enter to add • Use ↑↓ for history • Max 1000 chars • Use $code:, $url:, $cmd:, $prompt: or >functions • Use | for descriptions • Add #tags anywhere
             <span class="char-counter" id="charCounter">1000</span>
         </div>
     </div>
@@ -647,6 +648,7 @@ PREFIXES:
 • $cmd: A command line snippet
 • $code: A code snippet - use tags (#) to specify language
 • $url: Create a clickable URL entry
+• $prompt: An AI prompt or question
 
 FUNCTIONS:
 • > tB64 <text> - Convert text to Base64 encoding
@@ -839,7 +841,8 @@ FEATURES:
                 const prefixes = {
                     '$code:': 'code',
                     '$url:': 'url',
-                    '$cmd:': 'cmd'
+                    '$cmd:': 'cmd',
+                    '$prompt:': 'prompt'
                 };
 
                 let type = 'text';
