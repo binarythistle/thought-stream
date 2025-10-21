@@ -295,7 +295,22 @@
             background: #c82333;
         }
 
+        .action-btn.copied {
+            background: #22c55e;
+            animation: pulse-green 0.3s ease-in-out;
+        }
+
+        .action-btn.copied:hover {
+            background: #16a34a;
+        }
+
         @keyframes pulse-red {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pulse-green {
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
@@ -1151,7 +1166,7 @@ FEATURES:
 
                 copyBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.copyToClipboard(note.content);
+                    this.handleCopyClick(copyBtn, note.content);
                 });
 
                 if (openBtn) {
@@ -1186,11 +1201,11 @@ FEATURES:
             }
 
             copyToClipboard(text) {
-                navigator.clipboard.writeText(text).then(() => {
-                    // Could add a toast notification here
+                return navigator.clipboard.writeText(text).then(() => {
                     console.log('Copied to clipboard');
                 }).catch(err => {
                     console.error('Failed to copy: ', err);
+                    throw err; // Re-throw to allow caller to handle the error
                 });
             }
 
@@ -1232,6 +1247,42 @@ FEATURES:
                 if (deleteBtn.dataset.timeoutId) {
                     clearTimeout(deleteBtn.dataset.timeoutId);
                     delete deleteBtn.dataset.timeoutId;
+                }
+            }
+
+            handleCopyClick(copyBtn, text) {
+                // Perform the copy operation
+                this.copyToClipboard(text).then(() => {
+                    // Show feedback on successful copy
+                    this.showCopyFeedback(copyBtn);
+                }).catch((err) => {
+                    console.error('Failed to copy: ', err);
+                    // Could show error feedback here if needed
+                });
+            }
+
+            showCopyFeedback(copyBtn) {
+                // Change button appearance
+                copyBtn.textContent = 'Copied!';
+                copyBtn.classList.add('copied');
+
+                // Set timeout to revert button state
+                const timeoutId = setTimeout(() => {
+                    this.revertCopyButton(copyBtn);
+                }, 2000); // 2 seconds
+
+                // Store timeout ID on the button element for cleanup
+                copyBtn.dataset.timeoutId = timeoutId;
+            }
+
+            revertCopyButton(copyBtn) {
+                copyBtn.textContent = 'Copy';
+                copyBtn.classList.remove('copied');
+                
+                // Clear any existing timeout
+                if (copyBtn.dataset.timeoutId) {
+                    clearTimeout(copyBtn.dataset.timeoutId);
+                    delete copyBtn.dataset.timeoutId;
                 }
             }
 
