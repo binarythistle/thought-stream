@@ -812,6 +812,7 @@ FEATURES:
                 this.saveNotes();
                 this.chatInput.value = '';
                 this.autoResizeTextarea(); // Reset textarea height
+                this.updateCharCounter(); // Reset character counter to show 1000
                 this.historyIndex = -1; // Reset history navigation
                 this.extractAllTags();
                 this.renderTagFilter();
