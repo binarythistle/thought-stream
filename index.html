@@ -359,6 +359,12 @@
             font-size: 14px;
             font-family: 'Consolas', monospace;
             outline: none;
+            resize: none;
+            overflow-y: hidden;
+            min-height: 20px;
+            max-height: 200px;
+            line-height: 1.4;
+            padding: 0;
         }
 
         .chat-input::placeholder {
@@ -437,7 +443,7 @@
     <div class="input-container">
         <div class="input-wrapper" id="inputWrapper">
             <span class="prompt-symbol">></span>
-            <input type="text" class="chat-input" id="chatInput" placeholder="Type your note... (use $code:, $url:, $cmd:, $prompt:, >functions, | for descriptions, and #tags)" autofocus maxlength="1000">
+            <textarea class="chat-input" id="chatInput" placeholder="Type your note... (use $code:, $url:, $cmd:, $prompt:, >functions, | for descriptions, and #tags)" autofocus maxlength="1000" rows="1"></textarea>
         </div>
         <div class="help-text">
             Press Enter to add • Use ↑↓ for history • Max 1000 chars • Use $code:, $url:, $cmd:, $prompt: or >functions • Use | for descriptions • Add #tags anywhere
@@ -695,6 +701,9 @@ FEATURES:
                 this.tagFilter = document.getElementById('tagFilter');
                 this.emptyState = document.getElementById('emptyState');
                 this.charCounter = document.getElementById('charCounter');
+                
+                // Initialize textarea height
+                this.autoResizeTextarea();
             }
 
             bindEvents() {
@@ -703,11 +712,25 @@ FEATURES:
                         e.preventDefault();
                         this.addNote();
                     } else if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        this.navigateHistory('up');
+                        // Only handle history navigation if cursor is on the first line
+                        const cursorPosition = this.chatInput.selectionStart;
+                        const textBeforeCursor = this.chatInput.value.substring(0, cursorPosition);
+                        const isOnFirstLine = !textBeforeCursor.includes('\n');
+                        
+                        if (isOnFirstLine) {
+                            e.preventDefault();
+                            this.navigateHistory('up');
+                        }
                     } else if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        this.navigateHistory('down');
+                        // Only handle history navigation if cursor is on the last line
+                        const cursorPosition = this.chatInput.selectionStart;
+                        const textAfterCursor = this.chatInput.value.substring(cursorPosition);
+                        const isOnLastLine = !textAfterCursor.includes('\n');
+                        
+                        if (isOnLastLine) {
+                            e.preventDefault();
+                            this.navigateHistory('down');
+                        }
                     } else {
                         // Reset history navigation when user starts typing (for non-arrow keys)
                         if (this.historyIndex !== -1 && e.key !== 'ArrowUp' && e.key !== 'ArrowDown' && 
@@ -729,6 +752,7 @@ FEATURES:
 
                 this.chatInput.addEventListener('input', () => {
                     this.updateCharCounter();
+                    this.autoResizeTextarea();
                     // Reset history navigation when user starts typing
                     if (this.historyIndex !== -1) {
                         this.historyIndex = -1;
@@ -752,6 +776,27 @@ FEATURES:
                 });
             }
 
+            autoResizeTextarea() {
+                // Reset height to auto to get the correct scrollHeight
+                this.chatInput.style.height = 'auto';
+                
+                // Set height based on scroll height, with min/max constraints
+                const maxHeight = 200; // matches CSS max-height
+                const minHeight = 20;  // matches CSS min-height
+                
+                let newHeight = Math.min(Math.max(this.chatInput.scrollHeight, minHeight), maxHeight);
+                this.chatInput.style.height = newHeight + 'px';
+                
+                // Show scrollbar if content exceeds max height
+                this.chatInput.style.overflowY = this.chatInput.scrollHeight > maxHeight ? 'auto' : 'hidden';
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
             addNote() {
                 const input = this.chatInput.value.trim();
                 if (!input) return;
@@ -766,6 +811,7 @@ FEATURES:
                 this.notes.unshift(note);
                 this.saveNotes();
                 this.chatInput.value = '';
+                this.autoResizeTextarea(); // Reset textarea height
                 this.historyIndex = -1; // Reset history navigation
                 this.extractAllTags();
                 this.renderTagFilter();
@@ -815,6 +861,7 @@ FEATURES:
 
                 // Move cursor to end of input
                 this.chatInput.setSelectionRange(this.chatInput.value.length, this.chatInput.value.length);
+                this.autoResizeTextarea(); // Adjust height for new content
                 this.updateCharCounter();
             }
 
@@ -1110,7 +1157,7 @@ FEATURES:
                     : '';
                 
                 // Create description HTML
-                const descriptionHtml = note.description ? `<span class="entry-description">${note.description}</span>` : '';
+                const descriptionHtml = note.description ? `<span class="entry-description">${this.escapeHtml(note.description)}</span>` : '';
                 
                 entry.innerHTML = `
                     <div class="entry-header">
@@ -1121,13 +1168,17 @@ FEATURES:
                         </div>
                         <span class="timestamp">${timeStr}</span>
                     </div>
-                    <div class="entry-content ${note.type}" ${note.type === 'url' ? 'title="Click to open URL"' : ''}>${note.content}</div>
+                    <div class="entry-content ${note.type}" ${note.type === 'url' ? 'title="Click to open URL"' : ''}></div>
                     <div class="entry-actions">
                         <button class="action-btn copy-btn">Copy</button>
                         ${note.type === 'url' ? '<button class="action-btn open-btn">Open</button>' : ''}
                         <button class="action-btn delete-btn">Delete</button>
                     </div>
                 `;
+
+                // Set content using textContent to preserve line breaks with pre-wrap CSS
+                const contentElement = entry.querySelector('.entry-content');
+                contentElement.textContent = note.content;
 
                 // Apply syntax highlighting if needed
                 if (note.needsHighlighting) {
