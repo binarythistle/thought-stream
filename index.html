@@ -465,6 +465,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-ruby.min.js"></script>
+    <!-- YAML (independent) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
     <!-- GraphQL (independent) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-graphql.min.js"></script>
     <script>
@@ -503,6 +505,8 @@
                     'java': 'java',
                     'ruby': 'ruby',
                     'rb': 'ruby',
+                    'yaml': 'yaml',
+                    'yml': 'yaml',
                     'graphql': 'graphql',
                     'gql': 'graphql'
                 };
@@ -578,6 +582,16 @@
                                 .replace(/\bdo\b\s*/g, 'do\n  ')
                                 .replace(/\bend\b/g, '\nend')
                                 .replace(/\n\s*\n/g, '\n')
+                                .trim();
+                        }
+                    },
+                    yaml: {
+                        format: (code) => {
+                            // Basic YAML formatting - ensure proper indentation and spacing
+                            return code
+                                .replace(/:\s*/g, ': ')  // Ensure space after colons
+                                .replace(/^(\s*)- /gm, '$1- ')  // Ensure proper list formatting
+                                .replace(/\n\s*\n/g, '\n')  // Remove double newlines
                                 .trim();
                         }
                     }
@@ -1066,6 +1080,8 @@ FEATURES:
                     'cs': 'csharp',
                     'ruby': 'ruby',
                     'rb': 'ruby',
+                    'yaml': 'yaml',
+                    'yml': 'yaml',
                     'json': 'json'
                 };
                 return mapping[tag.toLowerCase()];
